@@ -31,25 +31,6 @@ class UserProject {
   };
 }
 
-// Only used when the API has not implemented the projects field yet.
-// Never written back to the backend or used to authorize project access.
-const previewProjects = <UserProject>[
-  UserProject(
-    id: 'preview-teamup',
-    name: 'TeamUp – Đồ án Mobile',
-    role: 'Flutter Dev',
-    specificTask: 'Phụ trách đăng nhập, đăng ký và hồ sơ cá nhân.',
-    status: 'Đang thực hiện',
-  ),
-  UserProject(
-    id: 'preview-study',
-    name: 'Study Together',
-    role: 'UI/UX Designer',
-    specificTask: 'Thiết kế giao diện và trải nghiệm học tập nhóm.',
-    status: 'Hoàn thành',
-  ),
-];
-
 String _text(dynamic value, [String fallback = '']) =>
     value is String && value.trim().isNotEmpty ? value.trim() : fallback;
 String? _optionalText(dynamic value) =>
@@ -104,9 +85,9 @@ class UserProfile {
             ? rawProjects.whereType<Map<String, dynamic>>().map(
                 UserProject.fromJson,
               )
-            : fallback?.projects ?? previewProjects,
+            : const <UserProject>[],
       ),
-      projectsAreMock: hasProjects ? false : fallback?.projectsAreMock ?? true,
+      projectsAreMock: false,
     );
   }
 

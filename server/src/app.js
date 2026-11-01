@@ -7,6 +7,8 @@ import { randomUUID } from 'node:crypto';
 import { FieldValue } from 'firebase-admin/firestore';
 import { auth, db, firebaseRest, profileFor, FirebaseRequestError } from './firebase/client.js';
 import { validate, signupSchema, signinSchema, refreshSchema, profileSchema, changePasswordSchema } from './validation.js';
+import { addProjectMember, approveTask, createProject, createTask, editTask, getProject, listProjects, listTasks, requestTaskChanges, requestTaskDeadline, reviewTaskDeadline, startTask, submitTask } from './projects.js';
+import { createWorkspaceDocument, createWorkspaceMeeting, createWorkspaceVote, deleteWorkspaceDocument, deleteWorkspaceMeeting, getWorkspace, submitWorkspaceVote } from './workspace.js';
 
 const fail = (status, message, code) => Object.assign(new Error(message), { status, code });
 export function createApp() {
@@ -32,6 +34,68 @@ export function createApp() {
   app.post('/api/messages', protectedRoute, messageLimit, async (req, res) => {
     const result = await sendMessage(req.body?.text, req.uid, req.user.displayName || req.user.username, req.user.avatarUrl);
     res.status(201).json(result);
+  });
+  app.get('/api/projects', protectedRoute, async (req, res) => {
+    res.json({ projects: await listProjects(req.uid) });
+  });
+  app.post('/api/projects', protectedRoute, async (req, res) => {
+    res.status(201).json({ project: await createProject(req.uid, req.user, req.body) });
+  });
+  app.post('/api/projects/:projectId/members', protectedRoute, async (req, res) => {
+    const result = await addProjectMember(req.params.projectId, req.uid, req.body);
+    res.status(result.added ? 201 : 200).json({ project: result.project });
+  });
+  app.get('/api/projects/:projectId', protectedRoute, async (req, res) => {
+    res.json({ project: await getProject(req.params.projectId, req.uid) });
+  });
+  app.get('/api/projects/:projectId/tasks', protectedRoute, async (req, res) => {
+    res.json({ tasks: await listTasks(req.params.projectId, req.uid) });
+  });
+  app.post('/api/projects/:projectId/tasks', protectedRoute, async (req, res) => {
+    res.status(201).json({ task: await createTask(req.params.projectId, req.uid, req.body) });
+  });
+  app.get('/api/projects/:projectId/workspace', protectedRoute, async (req, res) => {
+    res.json(await getWorkspace(req.params.projectId, req.uid));
+  });
+  app.post('/api/projects/:projectId/workspace/documents', protectedRoute, async (req, res) => {
+    res.status(201).json({ document: await createWorkspaceDocument(req.params.projectId, req.uid, req.body) });
+  });
+  app.delete('/api/projects/:projectId/workspace/documents/:documentId', protectedRoute, async (req, res) => {
+    res.json(await deleteWorkspaceDocument(req.params.projectId, req.uid, req.params.documentId));
+  });
+  app.post('/api/projects/:projectId/workspace/meetings', protectedRoute, async (req, res) => {
+    res.status(201).json({ meeting: await createWorkspaceMeeting(req.params.projectId, req.uid, req.body) });
+  });
+  app.delete('/api/projects/:projectId/workspace/meetings/:meetingId', protectedRoute, async (req, res) => {
+    res.json(await deleteWorkspaceMeeting(req.params.projectId, req.uid, req.params.meetingId));
+  });
+  app.post('/api/projects/:projectId/workspace/votes', protectedRoute, async (req, res) => {
+    res.status(201).json({ vote: await createWorkspaceVote(req.params.projectId, req.uid, req.body) });
+  });
+  app.post('/api/projects/:projectId/workspace/votes/:voteId/vote', protectedRoute, async (req, res) => {
+    res.json({ vote: await submitWorkspaceVote(req.params.projectId, req.uid, req.params.voteId, req.body) });
+  });
+  app.patch('/api/tasks/:taskId', protectedRoute, async (req, res) => {
+    res.json({ task: await editTask(req.params.taskId, req.uid, req.body) });
+  });
+  app.patch('/api/tasks/:taskId/start', protectedRoute, async (req, res) => {
+    res.json({ task: await startTask(req.params.taskId, req.uid) });
+  });
+  app.post('/api/tasks/:taskId/submit', protectedRoute, async (req, res) => {
+    res.json({ task: await submitTask(req.params.taskId, req.uid, req.body) });
+  });
+  app.post('/api/tasks/:taskId/approve', protectedRoute, async (req, res) => {
+    res.json({ task: await approveTask(req.params.taskId, req.uid) });
+  });
+  app.post('/api/tasks/:taskId/request-changes', protectedRoute, async (req, res) => {
+    res.json({ task: await requestTaskChanges(req.params.taskId, req.uid, req.body) });
+  });
+  app.post('/api/tasks/:taskId/deadline-requests', protectedRoute, async (req, res) => {
+    res.status(201).json({ task: await requestTaskDeadline(req.params.taskId, req.uid, req.body) });
+  });
+  app.post('/api/tasks/:taskId/deadline-requests/:decision', protectedRoute, async (req, res) => {
+    if (!['approve', 'reject'].includes(req.params.decision)) throw fail(404, 'API không tồn tại.', 'NOT_FOUND');
+    res.json({ task: await reviewTaskDeadline(req.params.taskId, req.uid, req.params.decision === 'approve') });
   });
   app.get('/api/messages/stream', protectedRoute, (req, res) => {
     res.set({ 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache, no-transform', 'X-Accel-Buffering': 'no' });

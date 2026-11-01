@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../controllers/session_controller.dart';
 import '../../core/theme/app_colors.dart';
 import '../../controllers/projects_controller.dart';
+import '../../widgets/project_form_dialog.dart';
 import 'project_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -16,8 +17,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   ProjectsController get _data => widget.projects;
-  final TextEditingController _searchController =
-      TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
 
   String _filter = 'Tất cả';
 
@@ -33,7 +33,8 @@ class _HomeScreenState extends State<HomeScreen> {
           name.toLowerCase().contains(query) ||
           tag.toLowerCase().contains(query);
 
-      final matchesRole = _filter == 'Tất cả' ||
+      final matchesRole =
+          _filter == 'Tất cả' ||
           (_filter == 'Tôi là leader' && role == 'Leader') ||
           (_filter == 'Tôi là member' && role == 'Member');
 
@@ -113,6 +114,19 @@ class _HomeScreenState extends State<HomeScreen> {
     ).then((_) => _data.load(silent: true));
   }
 
+  Future<void> _createProject() async {
+    final fields = await showProjectFormDialog(context);
+    if (fields == null || !mounted) return;
+    try {
+      await _data.createProject(fields);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.toString())));
+      }
+    }
+  }
+
   void _showProjectOptions() {
     showModalBottomSheet<void>(
       context: context,
@@ -143,13 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: const Text('Tạo project mới'),
                   onTap: () {
                     Navigator.pop(sheetContext);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Chức năng tạo dự án sẽ được bổ sung sau.',
-                        ),
-                      ),
-                    );
+                    _createProject();
                   },
                 ),
                 ListTile(
@@ -204,10 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _smallTag(String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 7,
-        vertical: 4,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.13),
         borderRadius: BorderRadius.circular(6),
@@ -257,11 +262,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: color.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(
-                      _projectIcon(project),
-                      color: color,
-                      size: 26,
-                    ),
+                    child: Icon(_projectIcon(project), color: color, size: 26),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -309,8 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         value: progress / 100,
                         minHeight: 7,
                         backgroundColor: AppColors.border,
-                        valueColor:
-                            const AlwaysStoppedAnimation<Color>(
+                        valueColor: const AlwaysStoppedAnimation<Color>(
                           AppColors.green,
                         ),
                       ),
@@ -434,89 +434,86 @@ class _HomeScreenState extends State<HomeScreen> {
         child: RefreshIndicator(
           onRefresh: _data.load,
           child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
-          children: [
-            Text(
-              '${_greeting()}, ${_displayName()}! 👋',
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Cùng nhau tạo nên những dự án tuyệt vời!',
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _searchController,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                hintText: 'Tìm kiếm dự án...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isEmpty
-                    ? null
-                    : IconButton(
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {});
-                        },
-                        icon: const Icon(Icons.close),
-                      ),
-                filled: true,
-                fillColor: AppColors.pageBackground,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.border),
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
+            children: [
+              Text(
+                '${_greeting()}, ${_displayName()}! 👋',
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
                 ),
               ),
-            ),
-            const SizedBox(height: 14),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
+              const SizedBox(height: 6),
+              const Text(
+                'Cùng nhau tạo nên những dự án tuyệt vời!',
+                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: _searchController,
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  hintText: 'Tìm kiếm dự án...',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _searchController.text.isEmpty
+                      ? null
+                      : IconButton(
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {});
+                          },
+                          icon: const Icon(Icons.close),
+                        ),
+                  filled: true,
+                  fillColor: AppColors.pageBackground,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildFilterChip('Tất cả'),
+                    _buildFilterChip('Tôi là leader'),
+                    _buildFilterChip('Tôi là member'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 22),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildFilterChip('Tất cả'),
-                  _buildFilterChip('Tôi là leader'),
-                  _buildFilterChip('Tôi là member'),
+                  const Text(
+                    'Dự án của bạn',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    '$count dự án',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                 ],
               ),
-            ),
-            const SizedBox(height: 22),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Dự án của bạn',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                Text(
-                  '$count dự án',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            _buildProjectsSection(),
-          ],
-        ),
+              const SizedBox(height: 14),
+              _buildProjectsSection(),
+            ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(

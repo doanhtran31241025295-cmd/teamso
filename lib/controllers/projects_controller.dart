@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../core/utils/api_json.dart';
+import '../models/task_model.dart';
 import '../services/api_client.dart';
 
 /// Nguồn dữ liệu duy nhất cho Home và Task Board: dự án của tài khoản đang
@@ -20,7 +21,7 @@ class ProjectsController extends ChangeNotifier {
   final String userId;
 
   List<Map<String, dynamic>> projects = [];
-  final Map<String, List<Map<String, dynamic>>> _tasks = {};
+  final Map<String, List<TaskModel>> _tasks = {};
   bool loading = false;
   bool loaded = false;
   String? error;
@@ -52,15 +53,17 @@ class ProjectsController extends ChangeNotifier {
               '/projects/${Uri.encodeComponent(id)}/tasks',
               protected: true,
             );
-            final list = extractList(res, const ['tasks', 'items', 'results'])
-                .map((t) => {...t, 'projectId': id})
-                .toList();
+            final list = extractList(res, const [
+              'tasks',
+              'items',
+              'results',
+            ]).map((t) => TaskModel.fromJson({...t, 'projectId': id})).toList();
             return MapEntry(id, list);
           } on ApiException catch (e) {
             // Phiên hết hạn đã được ApiClient xử lý; các lỗi khác chỉ làm
             // dự án này tạm thời không có công việc.
             if (e.status == 401) rethrow;
-            return MapEntry(id, <Map<String, dynamic>>[]);
+            return MapEntry(id, <TaskModel>[]);
           }
         }),
       );
@@ -94,42 +97,23 @@ class ProjectsController extends ChangeNotifier {
     return null;
   }
 
-  List<Map<String, dynamic>> tasksForProject(String id) =>
-      _tasks[id] ?? const [];
+  List<TaskModel> tasksForProject(String id) => _tasks[id] ?? const [];
 
-  List<Map<String, dynamic>> get allTasks => [
-    for (final list in _tasks.values) ...list,
-  ];
+  List<TaskModel> get allTasks => [for (final list in _tasks.values) ...list];
 
-  String taskId(Map<String, dynamic> t) =>
-      stringValue(t, const ['id', '_id', 'taskId', 'task_id']);
+  String taskId(TaskModel task) => task.id;
 
-  String taskStatus(Map<String, dynamic> t) => normalizeStatus(
-    stringValue(t, const ['status', 'taskStatus', 'task_status']),
-  );
+  String taskStatus(TaskModel task) => task.status;
 
-  String assigneeId(Map<String, dynamic> t) {
-    final raw = firstValue(t, const [
-      'assigneeId',
-      'assignee_id',
-      'assignedTo',
-      'assignee',
-      'userId',
-      'user_id',
-    ]);
-    final map = asMap(raw);
-    return map == null
-        ? raw?.toString() ?? ''
-        : stringValue(map, const ['id', '_id', 'userId']);
-  }
+  String assigneeId(TaskModel task) => task.assigneeId;
 
-  List<Map<String, dynamic>> tasksForCurrentUser() =>
+  List<TaskModel> tasksForCurrentUser() =>
       allTasks.where((t) => assigneeId(t) == userId).toList();
 
-  List<Map<String, dynamic>> tasksToReview() => allTasks
+  List<TaskModel> tasksToReview() => allTasks
       .where(
         (t) =>
-            roleInProject(t['projectId'].toString()) == 'Leader' &&
+            roleInProject(t.projectId) == 'Leader' &&
             taskStatus(t) == 'Chờ duyệt',
       )
       .toList();
@@ -143,6 +127,71 @@ class ProjectsController extends ChangeNotifier {
 
   List<Map<String, dynamic>> _membersOf(Map<String, dynamic> p) =>
       asMapList(firstValue(p, const ['members', 'projectMembers']));
+
+  List<Map<String, dynamic>> membersForProject(String id) {
+    final project = projectById(id);
+    if (project == null) return const [];
+    final members = _membersOf(project);
+    final leaderId = stringValue(project, const [
+      'leaderId',
+      'leader_id',
+      'ownerId',
+    ]);
+    if (leaderId.isNotEmpty &&
+        !members.any(
+          (member) =>
+              stringValue(member, const ['id', 'userId', 'user_id']) ==
+              leaderId,
+        )) {
+      members.insert(0, {
+        'id': leaderId,
+        'displayName': stringValue(project, const [
+          'leaderName',
+          'ownerName',
+        ], fallback: 'Leader'),
+        'avatarUrl': stringValue(project, const ['leaderAvatarUrl']),
+        'role': 'Leader',
+      });
+    }
+    return members;
+  }
+
+  List<MemberTaskStats> contributionStats(String id) {
+    final tasks = tasksForProject(id);
+    return membersForProject(id).map((member) {
+      final memberId = stringValue(member, const [
+        'id',
+        '_id',
+        'userId',
+        'user_id',
+      ]);
+      final assigned = tasks
+          .where((task) => task.assigneeId == memberId)
+          .toList();
+      return MemberTaskStats(
+        userId: memberId,
+        name: stringValue(member, const [
+          'displayName',
+          'name',
+          'fullName',
+          'username',
+        ], fallback: 'Thành viên'),
+        role: stringValue(
+          member,
+          const ['role'],
+          fallback:
+              memberId == stringValue(projectById(id) ?? {}, const ['leaderId'])
+              ? 'Leader'
+              : 'Member',
+        ),
+        avatarUrl: stringValue(member, const ['avatarUrl', 'photoUrl']),
+        assigned: assigned.length,
+        completed: assigned.where((task) => task.isDone).length,
+      );
+    }).toList()..sort(
+      (a, b) => b.completionPercent.compareTo(a.completionPercent),
+    );
+  }
 
   int memberCount(Map<String, dynamic> p) {
     final raw = firstValue(p, const ['members', 'projectMembers']);
@@ -164,25 +213,13 @@ class ProjectsController extends ChangeNotifier {
     return leader == userId ? 'Leader' : 'Member';
   }
 
-  String assigneeName(Map<String, dynamic> task) {
-    final direct = stringValue(task, const ['assigneeName', 'assignee_name']);
-    if (direct.isNotEmpty) return direct;
-    final embedded = asMap(task['assignee']);
-    if (embedded != null) {
-      final name = stringValue(embedded, const [
-        'displayName',
-        'name',
-        'fullName',
-        'username',
-      ]);
-      if (name.isNotEmpty) return name;
-    }
-    final id = assigneeId(task);
-    if (id == userId) return 'Bạn';
-    final project = projectById(task['projectId'].toString());
-    for (final m in project == null ? const <Map<String, dynamic>>[] : _membersOf(project)) {
-      if (stringValue(m, const ['id', '_id', 'userId', 'user_id']) == id) {
-        return stringValue(m, const [
+  String assigneeName(TaskModel task) {
+    if (task.assigneeName.isNotEmpty) return task.assigneeName;
+    if (task.assigneeId == userId) return 'Bạn';
+    for (final member in membersForProject(task.projectId)) {
+      if (stringValue(member, const ['id', '_id', 'userId', 'user_id']) ==
+          task.assigneeId) {
+        return stringValue(member, const [
           'displayName',
           'name',
           'fullName',
@@ -193,9 +230,34 @@ class ProjectsController extends ChangeNotifier {
     return 'Thành viên';
   }
 
+  Future<String> createProject(Map<String, dynamic> fields) async {
+    final response = await api.request(
+      'POST',
+      '/projects',
+      body: fields,
+      protected: true,
+    );
+    await load(silent: true);
+    final project = asMap(response['project']) ?? response;
+    return stringValue(project, const ['id', '_id', 'projectId']);
+  }
+
+  Future<void> addProjectMember(String projectId, String username) => _act(
+    () => api.request(
+      'POST',
+      '/projects/${Uri.encodeComponent(projectId)}/members',
+      body: {'username': username.trim()},
+      protected: true,
+    ),
+  );
+
   /// Chỉ giữ dự án mà tài khoản là thành viên (phòng khi API trả rộng hơn).
   bool _isMine(Map<String, dynamic> p) {
-    if (stringValue(p, const ['myRole', 'role', 'currentUserRole']).isNotEmpty) {
+    if (stringValue(p, const [
+      'myRole',
+      'role',
+      'currentUserRole',
+    ]).isNotEmpty) {
       return true;
     }
     if (stringValue(p, const ['leaderId', 'leader_id', 'ownerId']) == userId) {
@@ -214,7 +276,26 @@ class ProjectsController extends ChangeNotifier {
 
   // ---- Thao tác công việc ------------------------------------------------
 
-  Future<void> startTask(Map<String, dynamic> task) => _act(
+  Future<void> createTask(String projectId, Map<String, dynamic> fields) =>
+      _act(
+        () => api.request(
+          'POST',
+          '/projects/${Uri.encodeComponent(projectId)}/tasks',
+          body: fields,
+          protected: true,
+        ),
+      );
+
+  Future<void> updateTask(TaskModel task, Map<String, dynamic> fields) => _act(
+    () => api.request(
+      'PATCH',
+      _taskPath(task, ''),
+      body: fields,
+      protected: true,
+    ),
+  );
+
+  Future<void> startTask(TaskModel task) => _act(
     () => api.request(
       'PATCH',
       _taskPath(task, 'start'),
@@ -223,7 +304,7 @@ class ProjectsController extends ChangeNotifier {
     ),
   );
 
-  Future<void> submitTask(Map<String, dynamic> task, String outputLink) => _act(
+  Future<void> submitTask(TaskModel task, String outputLink) => _act(
     () => api.request(
       'POST',
       _taskPath(task, 'submit'),
@@ -232,7 +313,7 @@ class ProjectsController extends ChangeNotifier {
     ),
   );
 
-  Future<void> approveTask(Map<String, dynamic> task) => _act(
+  Future<void> approveTask(TaskModel task) => _act(
     () => api.request(
       'POST',
       _taskPath(task, 'approve'),
@@ -241,20 +322,45 @@ class ProjectsController extends ChangeNotifier {
     ),
   );
 
-  Future<void> requestChanges(Map<String, dynamic> task, String comment) =>
-      _act(
-        () => api.request(
-          'POST',
-          _taskPath(task, 'request-changes'),
-          body: {'comment': comment},
-          protected: true,
-        ),
-      );
+  Future<void> requestChanges(TaskModel task, String comment) => _act(
+    () => api.request(
+      'POST',
+      _taskPath(task, 'request-changes'),
+      body: {'comment': comment},
+      protected: true,
+    ),
+  );
 
-  String _taskPath(Map<String, dynamic> task, String action) {
+  Future<void> requestDeadlineExtension(
+    TaskModel task,
+    DateTime dueDate,
+    String reason,
+  ) => _act(
+    () => api.request(
+      'POST',
+      '${_taskPath(task, '')}/deadline-requests',
+      body: {'requestedDueDate': dueDate.toIso8601String(), 'reason': reason},
+      protected: true,
+    ),
+  );
+
+  Future<void> reviewDeadlineRequest(
+    TaskModel task, {
+    required bool approve,
+  }) => _act(
+    () => api.request(
+      'POST',
+      '${_taskPath(task, '')}/deadline-requests/${approve ? 'approve' : 'reject'}',
+      body: const {},
+      protected: true,
+    ),
+  );
+
+  String _taskPath(TaskModel task, String action) {
     final id = taskId(task);
     if (id.isEmpty) throw const ApiException('Công việc không có ID hợp lệ.');
-    return '/tasks/${Uri.encodeComponent(id)}/$action';
+    final base = '/tasks/${Uri.encodeComponent(id)}';
+    return action.isEmpty ? base : '$base/$action';
   }
 
   Future<void> _act(Future<Map<String, dynamic>> Function() action) async {
