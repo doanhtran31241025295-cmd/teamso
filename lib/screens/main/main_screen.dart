@@ -30,7 +30,7 @@ class _MainScreenState extends State<MainScreen> {
   late final List<Widget> _screens = [
     HomeScreen(session: widget.session, projects: _projects),
     TaskBoardScreen(projects: _projects),
-    const WorkspaceScreen(),
+    WorkspaceScreen(api: widget.session.api, projects: _projects),
     ChatScreen(session: widget.session),
     const NotificationScreen(),
   ];

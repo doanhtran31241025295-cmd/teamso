@@ -38,6 +38,26 @@ Snapshot nằm ở `server/.local/firebase-data/`. `npm run local` tự lưu m�
 - Bearer token được xác minh bằng `verifyIdToken(token, true)`.
 - Signout của backend thu hồi phiên trên tất cả thiết bị; dialog đã ghi rõ.
 - Đổi mật khẩu kiểm tra mật khẩu cũ, cập nhật trong Firebase và thu hồi phiên.
+
+## Dự án và công việc
+
+API lưu dự án trong collection `projects` và công việc trong `tasks`. Dự án có `leaderId`, `memberIds`, `members`, `name`, `description`, `rules` và `tag`; mỗi task lưu `projectId`, `assigneeId`, `title`, `description`, `priority`, `status`, `dueDate` và thông tin đầu ra. API chỉ cho thành viên đọc dự án/task; tạo/sửa task và duyệt yêu cầu quyền Leader.
+
+- `GET /api/projects`, `POST /api/projects`
+- `POST /api/projects/:projectId/members` (Leader thêm thành viên bằng username)
+- `GET /api/projects/:projectId`, `GET /api/projects/:projectId/tasks`, `POST /api/projects/:projectId/tasks`
+- `PATCH /api/tasks/:taskId`
+- `PATCH /api/tasks/:taskId/start`
+- `POST /api/tasks/:taskId/submit`, `/approve`, `/request-changes`
+- `POST /api/tasks/:taskId/deadline-requests`
+- `POST /api/tasks/:taskId/deadline-requests/:decision` (`approve` hoặc `reject`)
+
+Các task dùng trạng thái `Cần làm`, `Đang làm`, `Cần sửa`, `Chờ duyệt` và `Hoàn thành`. Project mới hiện có thể tạo qua API; màn hình tạo project trong app chưa được triển khai.
+- Workspace lưu tài liệu, lịch họp và bình chọn trong từng dự án. Thành viên dự án có thể xem/thêm; người tạo hoặc Leader có thể xóa tài liệu/lịch họp. Mỗi thành viên chỉ bình chọn một lần cho mỗi câu hỏi.
+- `GET /api/projects/:projectId/workspace`
+- `POST /api/projects/:projectId/workspace/documents`, `DELETE /api/projects/:projectId/workspace/documents/:documentId`
+- `POST /api/projects/:projectId/workspace/meetings`, `DELETE /api/projects/:projectId/workspace/meetings/:meetingId`
+- `POST /api/projects/:projectId/workspace/votes`, `POST /api/projects/:projectId/workspace/votes/:voteId/vote`
 - Hồ sơ ở `users/{uid}`; username unique được đặt chỗ/ánh xạ ở `usernames/{username}`.
 - UI vẫn có dự án minh họa khi API chưa trả trường projects; dữ liệu mẫu không cấp quyền dự án.
 - Flutter gọi Firestore thông qua Express/Admin SDK. Rules chặn client truy cập trực tiếp; API thực hiện kiểm tra token và whitelist field vì Admin SDK bypass rules.
