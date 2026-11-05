@@ -3,6 +3,7 @@ import 'chat_panel.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/theme/accent_surface.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/chat_palette.dart';
 import '../../utils/chat_time.dart';
@@ -246,30 +247,15 @@ class _ProjectChatListState extends State<ProjectChatList> {
                       final (tone, accent) = chatRoomColors(id);
                       return Card(
                         color: tone,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          side: const BorderSide(color: Colors.white, width: 2),
-                        ),
+                        shape: AccentCardBorder(accent: accent),
+                        clipBehavior: Clip.antiAlias,
                         margin: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 5,
                         ),
-                        child: Container(
+                        child: Ink(
                           decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                Color.lerp(Colors.white, tone, .12)!,
-                                tone,
-                                Color.lerp(tone, accent, .16)!,
-                              ],
-                              stops: const [0, .5, 1],
-                            ),
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border(
-                              left: BorderSide(color: accent, width: 6),
-                            ),
+                            gradient: pastelGradient(tone),
                           ),
                           child: ListTile(
                             key: ValueKey('chat-project-$id'),
@@ -295,7 +281,8 @@ class _ProjectChatListState extends State<ProjectChatList> {
                               (project['name'] ?? 'Dự án').toString(),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
+                                color: accent,
                                 fontWeight: FontWeight.w800,
                                 fontSize: 18,
                               ),

@@ -24,12 +24,7 @@ class Frame extends StatelessWidget {
     bottomNavigationBar: bottomNavigationBar,
     body: DecoratedBox(
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFE8E5FA), Colors.white, AppColors.pinkSoft],
-          stops: [0.0, 0.65, 1.0],
-        ),
+        color: Colors.white,
       ),
       child: Center(
         child: ConstrainedBox(

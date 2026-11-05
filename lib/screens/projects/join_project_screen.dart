@@ -108,7 +108,6 @@ class _JoinProjectScreenState extends State<JoinProjectScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F5FC),
       appBar: AppBar(title: const Text('Tham gia dự án')),
       body: SafeArea(
         child: ListView(

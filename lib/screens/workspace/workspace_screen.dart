@@ -1,3 +1,4 @@
+import '../../core/theme/app_colors.dart';
 import 'workspace_dialog_style.dart';
 import '../../core/theme/accent_surface.dart';
 
@@ -589,9 +590,9 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
     VoidCallback? onAdd,
   }) {
     final accent = switch (title) {
-      'Bình chọn nhóm' => const Color(0xFFA34076),
-      'Lịch họp nhóm' => const Color(0xFF7860A3),
-      _ => const Color(0xFF477F9C),
+      'Bình chọn nhóm' => AppColors.workspaceVote.$2,
+      'Lịch họp nhóm' => AppColors.workspaceMeeting.$2,
+      _ => AppColors.workspaceDocument.$2,
     };
     return Card(
       shape: AccentCardBorder(
@@ -1178,12 +1179,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
 
         return DecoratedBox(
           decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              stops: [0, .72, 1],
-              colors: [Colors.white, Colors.white, Color(0xFFFFF1F7)],
-            ),
+            color: Colors.white,
           ),
           child: ListView(
             padding: const EdgeInsets.all(16),
@@ -1212,7 +1208,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
                     widget.focusCollection == 'documents')
                   _buildSection(
                     title: 'Tài liệu nhóm',
-                    color: const Color(0xFFE8F3F8),
+                    color: AppColors.workspaceDocument.$1,
                     icon: Icons.library_books_outlined,
                     onAdd: _addDocument,
                     child: _buildDocuments(),
@@ -1222,7 +1218,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
                   _buildSection(
                     title: 'Bình chọn nhóm',
                     onAdd: _createVote,
-                    color: const Color(0xFFFCEEF4),
+                    color: AppColors.workspaceVote.$1,
                     icon: Icons.how_to_vote_outlined,
                     child: _buildVotes(),
                   ),
@@ -1230,7 +1226,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
                     widget.focusCollection == 'meetings')
                   _buildSection(
                     title: 'Lịch họp nhóm',
-                    color: const Color(0xFFF0EAF8),
+                    color: AppColors.workspaceMeeting.$1,
                     icon: Icons.groups_outlined,
                     onAdd: _addMeeting,
                     child: _buildMeetings(),

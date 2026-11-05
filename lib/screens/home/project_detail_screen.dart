@@ -18,7 +18,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/theme/app_colors.dart';
 
-const Color _background = Color(0xFFF7F7FB);
+const Color _background = Colors.white;
 const Color _textPrimary = Color(0xFF282638);
 const Color _textSecondary = Color(0xFF858397);
 
@@ -1537,11 +1537,10 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
     return Scaffold(
       backgroundColor: _background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFEEEBF8),
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: _textPrimary),
+          icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Navigator.maybePop(context),
         ),
         title: Text(
@@ -1549,7 +1548,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
-            color: _textPrimary,
+            color: Colors.white,
             fontWeight: FontWeight.w800,
             fontSize: 18,
           ),
@@ -1559,7 +1558,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
             PopupMenuButton<String>(
               tooltip: 'Tùy chọn dự án',
               enabled: !_busy,
-              icon: const Icon(Icons.more_vert_rounded, color: _textPrimary),
+              icon: const Icon(Icons.more_vert_rounded),
               onSelected: _onMenuSelected,
               itemBuilder: (_) => [
                 if (_isLeader)

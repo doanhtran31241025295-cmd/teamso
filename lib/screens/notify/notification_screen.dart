@@ -458,19 +458,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
   );
 
   Widget _tile(_TeamNotification n) {
-    final color = _colorForType(n.type);
-    final pastel = switch (n.type) {
-      _NotificationType.chat => const Color(0xFFFCEAF3),
-      _NotificationType.vote => const Color(0xFFE7F4EF),
-      _NotificationType.document => const Color(0xFFFFF1E3),
-      _NotificationType.meeting ||
-      _NotificationType.project => const Color(0xFFE6F0FC),
-      _NotificationType.pendingReview ||
-      _NotificationType.deadline => const Color(0xFFFFF4DF),
-      _NotificationType.completed ||
-      _NotificationType.reviewRequired => const Color(0xFFEAF5E9),
-      _NotificationType.revisionRequired => const Color(0xFFFCE8F0),
-      _ => const Color(0xFFEEE7FA),
+    final (pastel, color) = switch (n.type) {
+      _NotificationType.vote ||
+      _NotificationType.deadline ||
+      _NotificationType.revisionRequired => AppColors.workspaceVote,
+      _NotificationType.chat ||
+      _NotificationType.meeting => AppColors.workspaceMeeting,
+      _ => AppColors.workspaceDocument,
     };
     final gradient = pastelGradient(
       Color.lerp(Colors.white, pastel, n.isRead ? .6 : 1)!,
@@ -605,12 +599,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     final items = _filtered;
     return DecoratedBox(
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFF0E9FC), Color(0xFFFAF7FF), Color(0xFFFDF9FD)],
-          stops: [0, .6, 1],
-        ),
+        color: Colors.white,
       ),
       child: Column(
         children: [
@@ -644,12 +633,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
             margin: const EdgeInsets.fromLTRB(16, 16, 16, 6),
             padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
             decoration: AccentBoxDecoration(
-              accent: AppColors.purple,
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFFE5E5FB), Color(0xFFF4E8F5)],
-              ),
+              accent: AppColors.workspaceMeeting.$2,
+              gradient: pastelGradient(AppColors.workspaceMeeting.$1),
               borderRadius: BorderRadius.circular(22),
             ),
             child: Row(

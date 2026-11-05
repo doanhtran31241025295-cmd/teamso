@@ -25,7 +25,12 @@ abstract final class AppColors {
   static const pinkSoft = Color(0xFFFDEBF5);
   static const greenSoft = Color(0xFFEAF5EC);
   static const yellowSoft = Color(0xFFFFF6D6);
-  static const pageTint = Color(0xFFF7F7FB);
+  static const workspaceDocument = (Color(0xFFE8F3F8), Color(0xFF477F9C));
+  static const workspaceVote = (Color(0xFFFCEEF4), Color(0xFFA34076));
+  static const workspaceMeeting = (Color(0xFFF0EAF8), Color(0xFF7860A3));
+
+  static const pageHeader = Color(0xFF8371D0);
+  static const pageTint = Colors.white;
 
   /// Gradient thương hiệu: tím -> hồng -> xanh lá.
   static const brandGradient = LinearGradient(

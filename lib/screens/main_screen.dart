@@ -178,7 +178,7 @@ class _MainScreenState extends State<MainScreen>
           for (final (index, screen) in _screens.indexed)
             if (index == 1 || index == 2 || index == 4)
               ColoredBox(
-                color: const Color(0xFF867CB3),
+                color: AppColors.pageHeader,
                 child: ClipRRect(
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(28),
@@ -197,11 +197,7 @@ class _MainScreenState extends State<MainScreen>
           ? null
           : AppBar(
               toolbarHeight: 80,
-              backgroundColor: _currentIndex == 0
-                  ? const Color(0xFF8371D0)
-                  : _currentIndex == 3
-                  ? const Color(0xFF8D7ABD)
-                  : const Color(0xFF867CB3),
+              backgroundColor: AppColors.pageHeader,
               foregroundColor: Colors.white,
               titleTextStyle: _currentIndex <= 2
                   ? const TextStyle(

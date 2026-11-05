@@ -127,7 +127,6 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F5FC),
       appBar: AppBar(title: const Text('Tạo dự án mới')),
       body: SafeArea(
         child: Form(

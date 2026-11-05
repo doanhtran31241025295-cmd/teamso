@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/task_model.dart';
 
-const Color _taskBackground = Color(0xFFF8F8FC);
+const Color _taskBackground = Colors.white;
 const Color _taskTextPrimary = Color(0xFF282638);
 const Color _taskTextSecondary = Color(0xFF858397);
 const Color _taskPurple = Color(0xFF867CB3);
@@ -113,7 +113,6 @@ class TaskDetailScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: _taskBackground,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFEEEBF8),
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(

@@ -88,8 +88,8 @@ abstract final class AppTheme {
         },
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFFEEEBF8),
-        foregroundColor: AppColors.darkPurple,
+        backgroundColor: AppColors.pageHeader,
+        foregroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
@@ -98,7 +98,7 @@ abstract final class AppTheme {
         titleTextStyle: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.w700,
-          color: AppColors.textPrimary,
+          color: Colors.white,
         ),
       ),
       cardTheme: CardThemeData(
